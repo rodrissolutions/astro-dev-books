@@ -1,0 +1,56 @@
+---
+import { getCollection, render } from 'astro:content'
+import AmazonLogo from '../../components/AmazonLogo.astro'
+import { SHOW_BUY_BUTTON } from 'astro:env/server'
+import Layout from '../../layouts/Layout.astro'
+import BookScore from '../../components/BookScore.astro'
+import BuyButton from '../../components/BuyButton.astro'
+
+export const getStaticPaths = async () => {
+  const books = await getCollection('books')
+
+  return books.map((b) => ({
+    params: { id: b.id },
+    props: { b },
+  }))
+}
+
+const { b: book } = Astro.props
+const { data, id } = book
+const { title, author, img, readtime, description, buy } = data
+
+const { Content } = await render(book)
+// Le decimos que está paǵina será estática con excepcion del BookScore
+export const prerender = true
+---
+
+<Layout title={`${title} - Dev Books`}>
+  <div class="flex gap-12">
+    <aside class="flex flex-col items-center gap-4">
+      <a href="/" class="hover:underline opacity-70">⬅️ Volver atrás</a>
+      <img
+        transition:name={`img-${id}`}
+        src={`/${img}`}
+        alt={title}
+        class="rounded w-72 h-auto"
+      />
+      <BookScore server:defer>
+        // Fallback, renderiza algo mientras el servidor obtiene la puntuacion y
+        la renderiza
+        <span slot="fallback" class="text-xs opacity-70"
+          >Cargando puntuación...</span
+        >
+      </BookScore>
+
+      {SHOW_BUY_BUTTON && <BuyButton server:defer buy={buy} />}
+    </aside>
+    <main class="max-w-3xl" transition:name={`desc-${id}`}>
+      <h1 class="text-4xl font-bold mb-4">
+        {title}
+      </h1>
+      <div class="prose prose-invert">
+        <Content />
+      </div>
+    </main>
+  </div>
+</Layout>
